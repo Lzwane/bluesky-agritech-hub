@@ -14,7 +14,208 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      diagnoses: {
+        Row: {
+          confidence: number
+          created_at: string
+          crop: string
+          id: string
+          issue: string
+          recommendations: Json
+          severity: number
+          user_id: string
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          crop: string
+          id?: string
+          issue: string
+          recommendations?: Json
+          severity?: number
+          user_id: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          crop?: string
+          id?: string
+          issue?: string
+          recommendations?: Json
+          severity?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      forum_comments: {
+        Row: {
+          author_id: string | null
+          author_name: string
+          body: string
+          created_at: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string
+          body: string
+          created_at?: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string
+          body?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forum_posts: {
+        Row: {
+          author_id: string | null
+          author_name: string
+          body: string
+          category: string
+          created_at: string
+          id: string
+          title: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string
+          body: string
+          category?: string
+          created_at?: string
+          id?: string
+          title: string
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      forum_votes: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_votes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_listings: {
+        Row: {
+          category: string
+          contact: string
+          created_at: string
+          description: string
+          id: string
+          price: number
+          province: string
+          seller_id: string | null
+          title: string
+          unit: string
+          vendor_name: string
+          verified: boolean
+        }
+        Insert: {
+          category?: string
+          contact?: string
+          created_at?: string
+          description?: string
+          id?: string
+          price?: number
+          province?: string
+          seller_id?: string | null
+          title: string
+          unit?: string
+          vendor_name?: string
+          verified?: boolean
+        }
+        Update: {
+          category?: string
+          contact?: string
+          created_at?: string
+          description?: string
+          id?: string
+          price?: number
+          province?: string
+          seller_id?: string | null
+          title?: string
+          unit?: string
+          vendor_name?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string
+          farm_name: string | null
+          id: string
+          language: string
+          province: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          farm_name?: string | null
+          id: string
+          language?: string
+          province?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          farm_name?: string | null
+          id?: string
+          language?: string
+          province?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
