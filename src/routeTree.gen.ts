@@ -15,7 +15,10 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppAdvisorRouteImport } from './routes/_authenticated/app.advisor'
+import { Route as AuthenticatedAppForumRouteImport } from './routes/_authenticated/app.forum'
 import { Route as AuthenticatedAppLibraryRouteImport } from './routes/_authenticated/app.library'
+import { Route as AuthenticatedAppMarketplaceRouteImport } from './routes/_authenticated/app.marketplace'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,11 +50,27 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppAdvisorRoute = AuthenticatedAppAdvisorRouteImport.update({
+  id: '/advisor',
+  path: '/advisor',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppForumRoute = AuthenticatedAppForumRouteImport.update({
+  id: '/forum',
+  path: '/forum',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppLibraryRoute = AuthenticatedAppLibraryRouteImport.update({
   id: '/library',
   path: '/library',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppMarketplaceRoute =
+  AuthenticatedAppMarketplaceRouteImport.update({
+    id: '/marketplace',
+    path: '/marketplace',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppSettingsRoute =
   AuthenticatedAppSettingsRouteImport.update({
     id: '/settings',
@@ -64,7 +83,10 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/library': typeof LibraryRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
+  '/app/advisor': typeof AuthenticatedAppAdvisorRoute
+  '/app/forum': typeof AuthenticatedAppForumRoute
   '/app/library': typeof AuthenticatedAppLibraryRoute
+  '/app/marketplace': typeof AuthenticatedAppMarketplaceRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/': typeof AuthenticatedAppIndexRoute
 }
@@ -72,7 +94,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/library': typeof LibraryRoute
+  '/app/advisor': typeof AuthenticatedAppAdvisorRoute
+  '/app/forum': typeof AuthenticatedAppForumRoute
   '/app/library': typeof AuthenticatedAppLibraryRoute
+  '/app/marketplace': typeof AuthenticatedAppMarketplaceRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app': typeof AuthenticatedAppIndexRoute
 }
@@ -83,7 +108,10 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/library': typeof LibraryRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/_authenticated/app/advisor': typeof AuthenticatedAppAdvisorRoute
+  '/_authenticated/app/forum': typeof AuthenticatedAppForumRoute
   '/_authenticated/app/library': typeof AuthenticatedAppLibraryRoute
+  '/_authenticated/app/marketplace': typeof AuthenticatedAppMarketplaceRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
 }
@@ -94,11 +122,23 @@ export interface FileRouteTypes {
     | '/auth'
     | '/library'
     | '/app'
+    | '/app/advisor'
+    | '/app/forum'
     | '/app/library'
+    | '/app/marketplace'
     | '/app/settings'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/library' | '/app/library' | '/app/settings' | '/app'
+  to:
+    | '/'
+    | '/auth'
+    | '/library'
+    | '/app/advisor'
+    | '/app/forum'
+    | '/app/library'
+    | '/app/marketplace'
+    | '/app/settings'
+    | '/app'
   id:
     | '__root__'
     | '/'
@@ -106,7 +146,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/library'
     | '/_authenticated/app'
+    | '/_authenticated/app/advisor'
+    | '/_authenticated/app/forum'
     | '/_authenticated/app/library'
+    | '/_authenticated/app/marketplace'
     | '/_authenticated/app/settings'
     | '/_authenticated/app/'
   fileRoutesById: FileRoutesById
@@ -162,11 +205,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/advisor': {
+      id: '/_authenticated/app/advisor'
+      path: '/advisor'
+      fullPath: '/app/advisor'
+      preLoaderRoute: typeof AuthenticatedAppAdvisorRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/forum': {
+      id: '/_authenticated/app/forum'
+      path: '/forum'
+      fullPath: '/app/forum'
+      preLoaderRoute: typeof AuthenticatedAppForumRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/library': {
       id: '/_authenticated/app/library'
       path: '/library'
       fullPath: '/app/library'
       preLoaderRoute: typeof AuthenticatedAppLibraryRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/marketplace': {
+      id: '/_authenticated/app/marketplace'
+      path: '/marketplace'
+      fullPath: '/app/marketplace'
+      preLoaderRoute: typeof AuthenticatedAppMarketplaceRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/settings': {
@@ -180,13 +244,19 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppAdvisorRoute: typeof AuthenticatedAppAdvisorRoute
+  AuthenticatedAppForumRoute: typeof AuthenticatedAppForumRoute
   AuthenticatedAppLibraryRoute: typeof AuthenticatedAppLibraryRoute
+  AuthenticatedAppMarketplaceRoute: typeof AuthenticatedAppMarketplaceRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppAdvisorRoute: AuthenticatedAppAdvisorRoute,
+  AuthenticatedAppForumRoute: AuthenticatedAppForumRoute,
   AuthenticatedAppLibraryRoute: AuthenticatedAppLibraryRoute,
+  AuthenticatedAppMarketplaceRoute: AuthenticatedAppMarketplaceRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
