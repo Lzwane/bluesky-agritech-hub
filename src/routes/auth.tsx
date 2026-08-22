@@ -165,11 +165,11 @@ function AuthPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@farm.co.za"
                     autoComplete="email"
-                    aria-invalid={Boolean(errors.email)}
+                    aria-invalid={Boolean(errors["email"])}
                     required
                   />
-                  {errors.email ? (
-                    <p className="text-xs font-medium text-destructive">{errors.email}</p>
+                  {errors["email"] ? (
+                    <p className="text-xs font-medium text-destructive">{errors["email"]}</p>
                   ) : null}
                 </div>
 
@@ -182,11 +182,11 @@ function AuthPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="At least 8 characters"
                     autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                    aria-invalid={Boolean(errors.password)}
+                    aria-invalid={Boolean(errors["password"])}
                     required
                   />
-                  {errors.password ? (
-                    <p className="text-xs font-medium text-destructive">{errors.password}</p>
+                  {errors["password"] ? (
+                    <p className="text-xs font-medium text-destructive">{errors["password"]}</p>
                   ) : null}
                 </div>
 
