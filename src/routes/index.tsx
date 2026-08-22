@@ -352,7 +352,7 @@ function Index() {
                   key={plan.name}
                   className={
                     plan.featured
-                      ? "relative border-primary/60 bg-card shadow-elegant ring-1 ring-primary/30"
+                      ? "relative border-primary/60 bg-card shadow-card ring-1 ring-primary/30"
                       : "border-border/70 bg-card shadow-card"
                   }
                 >
