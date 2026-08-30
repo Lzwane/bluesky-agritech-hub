@@ -4,7 +4,6 @@ import { ArrowBigUp, MessageCircle, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { useProfile } from "@/components/app/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,10 +38,9 @@ const CATEGORIES = [
   "Marketplace",
 ];
 
-function ForumPage() {
+export function ForumPage() {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [category, setCategory] = useState<string>("All");
   const [composerOpen, setComposerOpen] = useState(false);
@@ -52,48 +50,57 @@ function ForumPage() {
   const [openPost, setOpenPost] = useState<string | null>(null);
   const [comment, setComment] = useState("");
 
+  const rawMeta = (user as any)?.user_metadata;
+  const displayName: string =
+    rawMeta?.display_name || user?.email?.split("@")[0] || "Farmer";
+
   const posts = useQuery({
     queryKey: ["forum-posts"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("forum_posts")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      return data as any[];
     },
   });
 
   const votes = useQuery({
     queryKey: ["forum-votes"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("forum_votes").select("post_id, user_id");
-      if (error) throw error;
-      return data;
+      const { data, error } = await (supabase as any)
+        .from("forum_votes")
+        .select("post_id, user_id");
+      if (error) return [] as any[];
+      return data as any[];
     },
   });
 
   const comments = useQuery({
     queryKey: ["forum-comments"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("forum_comments")
         .select("*")
         .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data;
+      if (error) return [] as any[];
+      return data as any[];
     },
   });
 
   const createPost = useMutation({
     mutationFn: async () => {
+      if (!user) throw new Error("You must be logged in to post.");
       if (title.trim().length < 6) throw new Error("Give your question a clearer title.");
       if (body.trim().length < 15) throw new Error("Add a little more detail to your post.");
-      const { error } = await supabase.from("forum_posts").insert({
-        author_id: user!.id,
-        author_name: profile?.display_name ?? "Farmer",
+      const { error } = await (supabase as any).from("forum_posts").insert({
+        author_id: user.id,
+        user_id: user.id,
+        author_name: displayName,
         title: title.trim().slice(0, 140),
         body: body.trim().slice(0, 2000),
+        content: body.trim().slice(0, 2000),
         category: postCategory,
       });
       if (error) throw error;
@@ -110,18 +117,19 @@ function ForumPage() {
 
   const toggleVote = useMutation({
     mutationFn: async (postId: string) => {
-      const mine = votes.data?.some((v) => v.post_id === postId && v.user_id === user!.id);
+      if (!user) return;
+      const mine = votes.data?.some((v) => v.post_id === postId && v.user_id === user.id);
       if (mine) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("forum_votes")
           .delete()
           .eq("post_id", postId)
-          .eq("user_id", user!.id);
+          .eq("user_id", user.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("forum_votes")
-          .insert({ post_id: postId, user_id: user!.id });
+          .insert({ post_id: postId, user_id: user.id });
         if (error) throw error;
       }
     },
@@ -131,12 +139,15 @@ function ForumPage() {
 
   const addComment = useMutation({
     mutationFn: async (postId: string) => {
+      if (!user) throw new Error("You must be logged in to reply.");
       if (comment.trim().length < 2) throw new Error("Write a reply first.");
-      const { error } = await supabase.from("forum_comments").insert({
+      const { error } = await (supabase as any).from("forum_comments").insert({
         post_id: postId,
-        author_id: user!.id,
-        author_name: profile?.display_name ?? "Farmer",
+        author_id: user.id,
+        user_id: user.id,
+        author_name: displayName,
         body: comment.trim().slice(0, 1000),
+        content: comment.trim().slice(0, 1000),
       });
       if (error) throw error;
     },
@@ -271,9 +282,9 @@ function ForumPage() {
 
                     <div className="min-w-0 flex-1 space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">{post.category}</Badge>
+                        <Badge variant="secondary">{post.category || "General"}</Badge>
                         <span className="text-xs font-medium text-muted-foreground">
-                          {post.author_name} ·{" "}
+                          {post.author_name || "Farmer"} ·{" "}
                           {new Date(post.created_at).toLocaleDateString("en-ZA", {
                             day: "numeric",
                             month: "short",
@@ -282,7 +293,7 @@ function ForumPage() {
                       </div>
                       <h3 className="text-base font-bold">{post.title}</h3>
                       <p className="text-sm whitespace-pre-line text-muted-foreground">
-                        {post.body}
+                        {post.body || post.content}
                       </p>
 
                       <Button
@@ -299,8 +310,8 @@ function ForumPage() {
                         <div className="space-y-3 border-l-2 border-primary-soft pl-4">
                           {postComments.map((c) => (
                             <div key={c.id} className="text-sm">
-                              <p className="font-semibold">{c.author_name}</p>
-                              <p className="text-muted-foreground">{c.body}</p>
+                              <p className="font-semibold">{c.author_name || "Farmer"}</p>
+                              <p className="text-muted-foreground">{c.body || c.content}</p>
                             </div>
                           ))}
                           <div className="flex flex-col gap-2 sm:flex-row">

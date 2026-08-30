@@ -1,349 +1,188 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Camera, ImagePlus, RotateCcw, ScanLine, Sparkles, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-
-import { useProfile } from "@/components/app/AppShell";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ScanLine,
+  BookOpen,
+  Store,
+  MessageSquare,
+  Bot,
+  Sparkles,
+  ArrowRight,
+  TrendingUp,
+  Layers,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { useLanguage } from "@/lib/i18n";
-import { runMockDiagnosis, type MockDiagnosis } from "@/lib/diagnosis";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/")({
-  component: DiagnosisPage,
+  component: DashboardHome,
 });
 
-type Stage = "idle" | "scanning" | "done";
-
-function DiagnosisPage() {
-  const { t } = useLanguage();
+function DashboardHome() {
   const { user } = useAuth();
-  const { data: profile } = useProfile();
-  const queryClient = useQueryClient();
-  const fileInput = useRef<HTMLInputElement>(null);
-  const cameraInput = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string>("");
-  const [stage, setStage] = useState<Stage>("idle");
-  const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<MockDiagnosis | null>(null);
-  const [dragging, setDragging] = useState(false);
-
-  const history = useQuery({
-    queryKey: ["diagnoses", user?.id],
-    enabled: Boolean(user?.id),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("diagnoses")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(5);
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const save = useMutation({
-    mutationFn: async (diagnosis: MockDiagnosis) => {
-      const { error } = await supabase.from("diagnoses").insert({
-        user_id: user!.id,
-        crop: diagnosis.crop,
-        issue: diagnosis.issue,
-        severity: diagnosis.severity,
-        confidence: diagnosis.confidence,
-        recommendations: diagnosis.actions,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diagnoses", user?.id] });
-    },
-    onError: () => toast.error("Could not save this diagnosis to your history."),
-  });
-
-  useEffect(() => {
-    if (stage !== "scanning") return;
-    setProgress(0);
-    const timer = window.setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) return 100;
-        return prev + 4;
-      });
-    }, 60);
-    return () => window.clearInterval(timer);
-  }, [stage]);
-
-  useEffect(() => {
-    if (stage === "scanning" && progress >= 100) {
-      const diagnosis = runMockDiagnosis(fileName);
-      setResult(diagnosis);
-      setStage("done");
-      save.mutate(diagnosis);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress, stage]);
-
-  function acceptFile(file: File | undefined) {
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose an image file of the affected plant.");
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Image is too large. Please use a photo under 10MB.");
-      return;
-    }
-    setPreview(URL.createObjectURL(file));
-    setFileName(file.name);
-    setResult(null);
-    setStage("idle");
-  }
-
-  function reset() {
-    setPreview(null);
-    setFileName("");
-    setResult(null);
-    setStage("idle");
-    setProgress(0);
-  }
-
-  const greetingName = profile?.display_name ?? "Farmer";
+  const rawMeta = (user as any)?.user_metadata;
+  const userName: string =
+    rawMeta?.display_name || user?.email?.split("@")[0] || "Farmer";
 
   return (
     <div className="space-y-8">
-      <header>
-        <p className="text-xs font-bold tracking-widest text-primary uppercase">
-          {t("app.greeting")}, {greetingName}
-        </p>
-        <h1 className="mt-1.5 text-2xl font-extrabold sm:text-3xl">{t("diagnosis.title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("diagnosis.subtitle")}</p>
-      </header>
-
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <Card className="border-border/70 shadow-card">
-          <CardContent className="space-y-4 pt-6">
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragging(false);
-                acceptFile(e.dataTransfer.files?.[0]);
-              }}
-              className={cn(
-                "relative flex min-h-[280px] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed p-6 text-center transition-colors",
-                dragging ? "border-primary bg-primary-soft/60" : "border-border bg-muted/40",
-              )}
+      {/* Welcome Banner */}
+      <div className="rounded-3xl border border-slate-700/60 bg-[#161d26]/90 p-6 sm:p-8 backdrop-blur-xl relative overflow-hidden shadow-2xl">
+        <div className="absolute top-0 right-0 h-64 w-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 max-w-2xl">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-xs font-medium text-emerald-300">
+            <Sparkles className="h-3 w-3" /> Field Command Console
+          </span>
+          <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold text-white">
+            Welcome back, {userName}
+          </h1>
+          <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed">
+            Your agronomic diagnostic suite is online. Monitor crop health, run rapid vision diagnostics, and access targeted disease regimens.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              to="/app/diagnosis"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-950 hover:from-emerald-500 hover:to-teal-500 transition active:scale-95"
             >
-              {preview ? (
-                <>
-                  <img
-                    src={preview}
-                    alt="Uploaded crop sample"
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                  {stage === "scanning" ? (
-                    <div className="absolute inset-0 bg-foreground/45">
-                      <div
-                        className="absolute inset-x-0 h-1 bg-primary shadow-lift transition-all duration-100"
-                        style={{ top: `${progress}%` }}
-                      />
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-leaf text-primary-foreground">
-                    <ImagePlus className="h-6 w-6" aria-hidden />
-                  </div>
-                  <p className="mt-4 text-sm font-semibold">Drag & drop a crop photo here</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Clear, close-up photos of the affected leaves work best (JPG or PNG, max 10MB).
-                  </p>
-                </>
-              )}
-            </div>
+              <ScanLine className="h-4 w-4" /> Run Quick Diagnosis
+            </Link>
+            <Link
+              to="/app/advisor"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 border border-slate-700/80 px-4 py-2.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition"
+            >
+              <Bot className="h-4 w-4 text-indigo-400" /> Agronomist AI
+            </Link>
+          </div>
+        </div>
+      </div>
 
-            <input
-              ref={fileInput}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => acceptFile(e.target.files?.[0])}
-            />
-            <input
-              ref={cameraInput}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => acceptFile(e.target.files?.[0])}
-            />
+      {/* Metrics Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="rounded-2xl border border-slate-800 bg-[#111720]/80 p-4">
+          <span className="text-[11px] text-slate-400 font-medium">Scans Completed</span>
+          <p className="mt-1 text-2xl font-bold text-white">14</p>
+          <span className="text-[10px] text-emerald-400 flex items-center gap-1 mt-1">
+            <TrendingUp className="h-3 w-3" /> 100% resolution
+          </span>
+        </div>
+        <div className="rounded-2xl border border-slate-800 bg-[#111720]/80 p-4">
+          <span className="text-[11px] text-slate-400 font-medium">Pathogen Threat</span>
+          <p className="mt-1 text-2xl font-bold text-amber-400">Moderate</p>
+          <span className="text-[10px] text-slate-400 mt-1 block">Maize rust reported</span>
+        </div>
+        <div className="rounded-2xl border border-slate-800 bg-[#111720]/80 p-4">
+          <span className="text-[11px] text-slate-400 font-medium">Active Community</span>
+          <p className="mt-1 text-2xl font-bold text-white">1,240+</p>
+          <span className="text-[10px] text-cyan-400 mt-1 block">SA Farmers online</span>
+        </div>
+        <div className="rounded-2xl border border-slate-800 bg-[#111720]/80 p-4">
+          <span className="text-[11px] text-slate-400 font-medium">System Health</span>
+          <p className="mt-1 text-2xl font-bold text-emerald-400">99.8%</p>
+          <span className="text-[10px] text-slate-400 mt-1 block">AI Vision Model v2</span>
+        </div>
+      </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => fileInput.current?.click()}>
-                <Upload className="mr-2 h-4 w-4" aria-hidden />
-                {t("diagnosis.upload")}
-              </Button>
-              <Button variant="outline" onClick={() => cameraInput.current?.click()}>
-                <Camera className="mr-2 h-4 w-4" aria-hidden />
-                Use camera
-              </Button>
-              <Button
-                onClick={() => setStage("scanning")}
-                disabled={!preview || stage === "scanning"}
-                className="sm:ml-auto"
-              >
-                <ScanLine className="mr-2 h-4 w-4" aria-hidden />
-                {stage === "scanning" ? "Analysing…" : t("diagnosis.analyse")}
-              </Button>
-              {preview ? (
-                <Button variant="ghost" onClick={reset}>
-                  <RotateCcw className="mr-2 h-4 w-4" aria-hidden />
-                  Reset
-                </Button>
-              ) : null}
-            </div>
+      {/* Applications Hub */}
+      <div className="space-y-4">
+        <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+          <Layers className="h-4 w-4 text-emerald-400" /> System Modules
+        </h2>
 
-            {stage === "scanning" ? (
-              <div className="space-y-2">
-                <Progress value={progress} aria-label="Analysis progress" />
-                <p className="text-xs font-medium text-muted-foreground">
-                  Comparing against 12 400 reference samples… {progress}%
-                </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Link
+            to="/app/diagnosis"
+            className="group rounded-2xl border border-slate-800 bg-[#131922] p-5 hover:border-emerald-500/50 hover:bg-[#161f2c] transition flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 mb-3">
+                <ScanLine className="h-5 w-5" />
               </div>
-            ) : null}
-          </CardContent>
-        </Card>
+              <h3 className="font-bold text-sm text-white group-hover:text-emerald-400 transition">AI Diagnosis</h3>
+              <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                Visual symptom detection with customized organic & chemical cures.
+              </p>
+            </div>
+            <div className="mt-4 flex items-center justify-between text-xs font-semibold text-emerald-400">
+              <span>Launch Scanner</span>
+              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition" />
+            </div>
+          </Link>
 
-        <div className="space-y-6">
-          {stage === "scanning" ? (
-            <Card className="border-border/70">
-              <CardContent className="space-y-3 pt-6">
-                <Skeleton className="h-6 w-40" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-24 w-full" />
-              </CardContent>
-            </Card>
-          ) : null}
+          <Link
+            to="/app/library"
+            className="group rounded-2xl border border-slate-800 bg-[#131922] p-5 hover:border-cyan-500/50 hover:bg-[#161f2c] transition flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 mb-3">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <h3 className="font-bold text-sm text-white group-hover:text-cyan-400 transition">Pathology Library</h3>
+              <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                Indexed library of crop pests, deficiencies, and treatments.
+              </p>
+            </div>
+            <div className="mt-4 flex items-center justify-between text-xs font-semibold text-cyan-400">
+              <span>Browse Diseases</span>
+              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition" />
+            </div>
+          </Link>
 
-          {stage === "done" && result ? <ResultCard result={result} /> : null}
+          <Link
+            to="/app/advisor"
+            className="group rounded-2xl border border-slate-800 bg-[#131922] p-5 hover:border-indigo-500/50 hover:bg-[#161f2c] transition flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 mb-3">
+                <Bot className="h-5 w-5" />
+              </div>
+              <h3 className="font-bold text-sm text-white group-hover:text-indigo-400 transition">Agronomist Assistant</h3>
+              <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                Consult on soil chemistry, spray schedules, and seasonal preparations.
+              </p>
+            </div>
+            <div className="mt-4 flex items-center justify-between text-xs font-semibold text-indigo-400">
+              <span>Open Chat</span>
+              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition" />
+            </div>
+          </Link>
 
-          {stage === "idle" && !result ? (
-            <Card className="border-border/70 bg-primary-soft/50">
-              <CardContent className="space-y-3 pt-6 text-sm">
-                <p className="font-bold">Get a sharper diagnosis</p>
-                <ul className="space-y-2 text-muted-foreground">
-                  <li>Photograph in daylight, avoiding harsh shadows.</li>
-                  <li>Fill the frame with the affected leaf or stem.</li>
-                  <li>Include both healthy and damaged tissue in the shot.</li>
-                </ul>
-              </CardContent>
-            </Card>
-          ) : null}
+          <Link
+            to="/app/marketplace"
+            className="group rounded-2xl border border-slate-800 bg-[#131922] p-5 hover:border-amber-500/50 hover:bg-[#161f2c] transition flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 mb-3">
+                <Store className="h-5 w-5" />
+              </div>
+              <h3 className="font-bold text-sm text-white group-hover:text-amber-400 transition">Marketplace</h3>
+              <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                Approved fungicides, fertilizers, bio-stimulants & spray kits.
+              </p>
+            </div>
+            <div className="mt-4 flex items-center justify-between text-xs font-semibold text-amber-400">
+              <span>View Products</span>
+              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition" />
+            </div>
+          </Link>
 
-          <Card className="border-border/70">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Recent scans</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {history.isLoading ? (
-                <>
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                </>
-              ) : history.data && history.data.length > 0 ? (
-                history.data.map((row) => (
-                  <div
-                    key={row.id}
-                    className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 px-3 py-2.5"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">{row.issue}</p>
-                      <p className="text-xs text-muted-foreground">{row.crop}</p>
-                    </div>
-                    <Badge variant="secondary">{row.severity}%</Badge>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Your scan history will appear here after your first diagnosis.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          <Link
+            to="/app/forum"
+            className="group rounded-2xl border border-slate-800 bg-[#131922] p-5 hover:border-rose-500/50 hover:bg-[#161f2c] transition flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 mb-3">
+                <MessageSquare className="h-5 w-5" />
+              </div>
+              <h3 className="font-bold text-sm text-white group-hover:text-rose-400 transition">Farmer Forum</h3>
+              <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                Connect with local growers and report regional outbreaks.
+              </p>
+            </div>
+            <div className="mt-4 flex items-center justify-between text-xs font-semibold text-rose-400">
+              <span>Join Discussion</span>
+              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition" />
+            </div>
+          </Link>
         </div>
       </div>
     </div>
-  );
-}
-
-function ResultCard({ result }: { result: MockDiagnosis }) {
-  const tone =
-    result.severity >= 70 ? "bg-destructive" : result.severity >= 40 ? "bg-warning" : "bg-primary";
-
-  return (
-    <Card className="border-primary/30 shadow-lift">
-      <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge className="bg-primary text-primary-foreground">{result.type}</Badge>
-          <span className="text-xs font-semibold text-muted-foreground">
-            {result.confidence}% confidence
-          </span>
-        </div>
-        <CardTitle className="mt-2 text-lg">{result.issue}</CardTitle>
-        <p className="text-sm text-muted-foreground">Detected on {result.crop}</p>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        <div>
-          <div className="mb-1.5 flex items-center justify-between text-xs font-bold">
-            <span>Severity</span>
-            <span>{result.severityLabel}</span>
-          </div>
-          <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className={cn("h-full rounded-full transition-all", tone)}
-              style={{ width: `${result.severity}%` }}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-sm font-bold">Treatment action plan</p>
-          <ol className="space-y-2.5">
-            {result.actions.map((action, index) => (
-              <li key={action} className="flex gap-3 text-sm text-muted-foreground">
-                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary-soft text-[11px] font-bold text-primary">
-                  {index + 1}
-                </span>
-                <span>{action}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        <div className="rounded-xl bg-muted/60 p-3 text-xs text-muted-foreground">
-          {result.note}
-        </div>
-
-        <Button asChild variant="secondary" className="w-full">
-          <Link to="/app/advisor">
-            <Sparkles className="mr-2 h-4 w-4" aria-hidden />
-            Ask the AI Farm Advisor about this
-          </Link>
-        </Button>
-      </CardContent>
-    </Card>
   );
 }

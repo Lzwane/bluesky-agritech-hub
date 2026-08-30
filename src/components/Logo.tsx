@@ -1,37 +1,32 @@
-import { Link } from "@tanstack/react-router";
+import logoImg from "@/assets/BlueSky_AgrITech_Logo.png";
 
-import logo from "@/assets/bluesky-logo.png.asset.json";
-import { cn } from "@/lib/utils";
-
-export function Logo({
-  className,
-  to = "/",
-  showWordmark = true,
-}: {
+interface LogoProps {
   className?: string;
-  to?: string;
-  showWordmark?: boolean;
-}) {
-  return (
-    <Link to={to} className={cn("flex min-w-0 items-center gap-2.5", className)}>
-      <img
-        src={logo.url}
-        alt="BlueSky AgriTech"
-        width={40}
-        height={40}
-        className="h-9 w-9 shrink-0 rounded-xl object-cover"
-        style={{ objectPosition: "50% 32%" }}
-      />
-      {showWordmark ? (
-        <span className="min-w-0 leading-tight">
-          <span className="block truncate font-display text-sm font-extrabold tracking-tight">
-            BlueSky AgriTech
-          </span>
-          <span className="block truncate text-[11px] font-medium text-muted-foreground">
-            AI Crop Detective
-          </span>
-        </span>
-      ) : null}
-    </Link>
-  );
+  size?: "sm" | "md" | "lg";
+  showText?: boolean;
 }
+
+export const Logo = ({ className = "", size = "md", showText = true }: LogoProps) => {
+  const sizeClasses = {
+    sm: "h-6 w-auto",
+    md: "h-9 w-auto",
+    lg: "h-12 w-auto",
+  };
+
+  return (
+    <div className={`flex items-center gap-2 ${className}`}>
+      <img
+        src={logoImg}
+        alt="BlueSky AgriTech"
+        className={`${sizeClasses[size]} object-contain`}
+      />
+      {showText && (
+        <span className="font-semibold text-lg tracking-tight text-foreground">
+          BlueSky AgriTech
+        </span>
+      )}
+    </div>
+  );
+};
+
+export default Logo;

@@ -4,7 +4,6 @@ import { BadgeCheck, MapPin, Phone, Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { useProfile } from "@/components/app/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,10 +51,9 @@ const PROVINCES = [
 
 const rand = new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" });
 
-function MarketplacePage() {
+export function MarketplacePage() {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
@@ -71,32 +69,38 @@ function MarketplacePage() {
     province: "Gauteng",
   });
 
+  const rawMeta = (user as any)?.user_metadata;
+  const vendorName: string =
+    rawMeta?.display_name || user?.email?.split("@")[0] || "Farmer";
+
   const listings = useQuery({
     queryKey: ["listings"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("marketplace_listings")
         .select("*")
         .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      if (error) return [] as any[];
+      return data as any[];
     },
   });
 
   const create = useMutation({
     mutationFn: async () => {
+      if (!user) throw new Error("You must be logged in to create a listing.");
       const price = Number(form.price);
       if (form.title.trim().length < 4) throw new Error("Add a clear product title.");
       if (!Number.isFinite(price) || price <= 0) throw new Error("Enter a valid price in rand.");
       if (form.contact.trim().length < 5) throw new Error("Add a phone number or email.");
-      const { error } = await supabase.from("marketplace_listings").insert({
-        seller_id: user!.id,
+      const { error } = await (supabase as any).from("marketplace_listings").insert({
+        seller_id: user.id,
+        user_id: user.id,
         title: form.title.trim().slice(0, 120),
         description: form.description.trim().slice(0, 1000),
         category: form.category,
         price,
         unit: form.unit.trim().slice(0, 30) || "each",
-        vendor_name: profile?.farm_name || profile?.display_name || "Farmer",
+        vendor_name: vendorName,
         contact: form.contact.trim().slice(0, 120),
         province: form.province,
       });
@@ -124,11 +128,11 @@ function MarketplacePage() {
     const q = query.trim().toLowerCase();
     const matchesQuery =
       !q ||
-      listing.title.toLowerCase().includes(q) ||
-      listing.description.toLowerCase().includes(q) ||
-      listing.vendor_name.toLowerCase().includes(q);
+      listing.title?.toLowerCase().includes(q) ||
+      listing.description?.toLowerCase().includes(q) ||
+      listing.vendor_name?.toLowerCase().includes(q);
     const matchesCategory = category === "All" || listing.category === category;
-    const matchesPrice = Number(listing.price) <= maxPrice;
+    const matchesPrice = Number(listing.price || 0) <= maxPrice;
     return matchesQuery && matchesCategory && matchesPrice;
   });
 

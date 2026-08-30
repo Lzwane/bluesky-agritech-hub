@@ -2,13 +2,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Leaf, ShieldCheck, Sprout, ArrowRight, Sparkles } from "lucide-react";
 
-import { Logo } from "@/components/Logo";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import logoImg from "@/assets/BlueSky_AgrITech_Logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,16 +13,16 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Sign in — AI Crop Detective by BlueSky AgriTech" },
+      { title: "Sign In — AI Crop Detective by BlueSky AgriTech" },
       {
         name: "description",
         content:
-          "Sign in or create your free AI Crop Detective account to diagnose crop pests, diseases and nutrient deficiencies instantly.",
+          "Sign in to your AI Crop Detective account to diagnose crop pests, diseases, and nutrient deficiencies.",
       },
-      { property: "og:title", content: "Sign in — AI Crop Detective" },
+      { property: "og:title", content: "Sign In — AI Crop Detective" },
       {
         property: "og:description",
-        content: "Access AI crop diagnostics, the disease library, marketplace and farm advisor.",
+        content: "Access AI crop diagnostics, the disease library, marketplace, and farm advisor.",
       },
     ],
   }),
@@ -34,7 +30,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 const credentials = z.object({
-  email: z.string().trim().email({ message: "Enter a valid email address" }).max(255),
+  email: z.string().trim().email({ message: "Please enter a valid email address" }).max(255),
   password: z.string().min(8, { message: "Password must be at least 8 characters" }).max(72),
   displayName: z.string().trim().max(60).optional(),
 });
@@ -66,19 +62,47 @@ function AuthPage() {
     }
     setErrors({});
     setBusy(true);
+
     try {
       if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
           email: parsed.data.email,
           password: parsed.data.password,
           options: {
-            emailRedirectTo: window.location.origin,
             data: { display_name: parsed.data.displayName || parsed.data.email.split("@")[0] },
           },
         });
-        if (error) throw error;
-        if (!data.session) {
-          toast.success("Almost there — check your email to confirm your account.");
+
+        if (error) {
+          if (
+            error.message.toLowerCase().includes("already registered") ||
+            error.message.toLowerCase().includes("user already exists")
+          ) {
+            toast.error("This email is already registered. Please sign in instead.");
+            setMode("signin");
+            return;
+          }
+          throw error;
+        }
+
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          toast.error("This email is already registered. Please sign in instead.");
+          setMode("signin");
+          return;
+        }
+
+        toast.success("Account created successfully! Welcome to BlueSky.");
+
+        if (data.session) {
+          navigate({ to: "/app", replace: true });
+        } else {
+          const loginRes = await supabase.auth.signInWithPassword({
+            email: parsed.data.email,
+            password: parsed.data.password,
+          });
+          if (!loginRes.error) {
+            navigate({ to: "/app", replace: true });
+          }
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -86,6 +110,7 @@ function AuthPage() {
           password: parsed.data.password,
         });
         if (error) throw error;
+        navigate({ to: "/app", replace: true });
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Authentication failed");
@@ -101,122 +126,245 @@ function AuthPage() {
     });
     if (result.error) {
       setBusy(false);
-      toast.error("Google sign-in failed. Please try again.");
+      toast.error("Google authentication failed.");
       return;
     }
     if (result.redirected) return;
   }
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="hidden flex-col justify-between bg-gradient-hero p-10 text-primary-foreground lg:flex">
-        <Logo />
-        <div className="max-w-md">
-          <h1 className="text-4xl font-extrabold">Diagnose crop problems in seconds.</h1>
-          <p className="mt-4 text-sm/6 opacity-90">
-            AI Crop Detective puts pest, disease and nutrient diagnostics in the hands of South
-            African farmers — in all 11 official languages, wherever you farm.
-          </p>
-          <ul className="mt-8 space-y-3 text-sm font-medium">
-            <li>Instant photo-based crop diagnosis</li>
-            <li>Localised organic and chemical treatment plans</li>
-            <li>Verified input marketplace and farmer community</li>
-          </ul>
+    <div className="grid min-h-screen w-full lg:grid-cols-12 bg-[#0d1217]">
+      {/* Left Info Column */}
+      <div className="relative hidden lg:flex lg:col-span-5 flex-col justify-between overflow-hidden p-8 xl:p-10 bg-gradient-to-br from-emerald-950/70 via-slate-900 to-[#0b1015] border-r border-slate-800/60">
+        <div className="absolute inset-0 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:24px_24px] opacity-15 pointer-events-none" />
+        <div className="absolute top-1/4 -left-20 h-72 w-72 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div>
+            <span className="text-[11px] uppercase tracking-widest text-emerald-400 font-bold">AgriTech Intelligence</span>
+            <p className="text-[11px] text-slate-400">Precision Crop Health Ecosystem</p>
+          </div>
         </div>
-        <p className="text-xs opacity-75">BlueSky AgriTech Pty LTD</p>
+
+        <div className="relative z-10 my-auto max-w-sm py-8">
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300 backdrop-blur-md">
+            <Sprout className="h-3.5 w-3.5" /> Next-Gen AI Diagnostics
+          </span>
+          <h1 className="mt-5 text-3xl font-extrabold tracking-tight text-white leading-tight">
+            Diagnose crop issues with field-level precision.
+          </h1>
+          <p className="mt-3.5 text-sm text-slate-300 leading-relaxed">
+            Real-time pathogen and deficiency diagnosis calibrated for South African soils across all 11 official languages.
+          </p>
+
+          <div className="mt-6 space-y-3">
+            <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3.5 backdrop-blur-sm flex items-start gap-3">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5">
+                <Leaf className="h-3.5 w-3.5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white text-xs">Instant Visual Diagnostic</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">Automated visual disease & pest scan.</p>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3.5 backdrop-blur-sm flex items-start gap-3">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-400 mt-0.5">
+                <ShieldCheck className="h-3.5 w-3.5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white text-xs">Targeted Remedies</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">Organic recipes & approved treatments.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 flex items-center justify-between border-t border-slate-800/80 pt-4 text-[11px] text-slate-400">
+          <span>&copy; {new Date().getFullYear()} BlueSky AgriTech</span>
+          <span className="text-slate-500">Autonomous Agricultural Systems</span>
+        </div>
       </div>
 
-      <div className="flex items-center justify-center bg-background px-4 py-10">
-        <div className="w-full max-w-md">
-          <div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
-            <Logo />
+      {/* Right Blackboard Form Container */}
+      <div className="relative lg:col-span-7 flex flex-col justify-center items-center px-6 py-10 sm:px-12 md:px-16 lg:px-12 xl:px-20 bg-[#11161d] overflow-y-auto">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800/20 via-transparent to-transparent pointer-events-none" />
+
+        <div className="relative z-10 w-full max-w-lg">
+          {/* Centered Logo & Branding */}
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="relative group mb-3">
+              <div className="absolute -inset-1.5 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-2xl blur-md opacity-30 group-hover:opacity-60 transition duration-500" />
+              <div className="relative flex h-18 w-18 items-center justify-center rounded-2xl bg-slate-900/90 border border-slate-700/80 p-2 shadow-2xl">
+                <img
+                  src={logoImg}
+                  alt="BlueSky AgriTech"
+                  className="h-14 w-14 object-contain filter drop-shadow"
+                />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-white">
+              {mode === "signin" ? "Sign In to BlueSky" : "Create your Account"}
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-400">
+              {mode === "signin"
+                ? "Enter your details to access the AI diagnostics portal"
+                : "Join the BlueSky precision agriculture network"}
+            </p>
           </div>
 
-          <Card className="border-border/80 shadow-card">
-            <CardContent className="pt-6">
-              <Tabs value={mode} onValueChange={(value) => setMode(value as typeof mode)}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="signin">Sign in</TabsTrigger>
-                  <TabsTrigger value="signup">Create account</TabsTrigger>
-                </TabsList>
-              </Tabs>
-
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                {mode === "signup" ? (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="displayName">Full name</Label>
-                    <Input
+          {/* Blackboard Form Box */}
+          <div className="rounded-3xl border border-slate-700/60 bg-[#161d26]/90 p-6 sm:p-9 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Question Floating Input: Full Name (Only in create mode) */}
+              {mode === "signup" && (
+                <div>
+                  <div className="relative">
+                    <input
                       id="displayName"
+                      type="text"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      placeholder="Thabo Mokoena"
+                      placeholder=" "
                       maxLength={60}
                       autoComplete="name"
+                      className="peer block w-full rounded-xl border border-slate-700/80 bg-slate-900/60 px-4 pt-6 pb-2 text-sm text-white placeholder-transparent transition-all focus:border-emerald-500 focus:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
+                    <label
+                      htmlFor="displayName"
+                      className="pointer-events-none absolute left-4 top-2 text-[11px] font-medium text-slate-400 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-slate-500 peer-focus:top-2 peer-focus:text-[11px] peer-focus:text-emerald-400"
+                    >
+                      What is your full name?
+                    </label>
                   </div>
-                ) : null}
+                  {errors["displayName"] && (
+                    <p className="mt-1.5 text-xs font-medium text-rose-400">{errors["displayName"]}</p>
+                  )}
+                </div>
+              )}
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
+              {/* Question Floating Input: Email */}
+              <div>
+                <div className="relative">
+                  <input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@farm.co.za"
+                    placeholder=" "
                     autoComplete="email"
-                    aria-invalid={Boolean(errors["email"])}
                     required
+                    className="peer block w-full rounded-xl border border-slate-700/80 bg-slate-900/60 px-4 pt-6 pb-2 text-sm text-white placeholder-transparent transition-all focus:border-emerald-500 focus:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
-                  {errors["email"] ? (
-                    <p className="text-xs font-medium text-destructive">{errors["email"]}</p>
-                  ) : null}
+                  <label
+                    htmlFor="email"
+                    className="pointer-events-none absolute left-4 top-2 text-[11px] font-medium text-slate-400 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-slate-500 peer-focus:top-2 peer-focus:text-[11px] peer-focus:text-emerald-400"
+                  >
+                    What is your email address?
+                  </label>
                 </div>
+                {errors["email"] && (
+                  <p className="mt-1.5 text-xs font-medium text-rose-400">{errors["email"]}</p>
+                )}
+              </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
+              {/* Question Floating Input: Password */}
+              <div>
+                <div className="relative">
+                  <input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 8 characters"
+                    placeholder=" "
                     autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                    aria-invalid={Boolean(errors["password"])}
                     required
+                    className="peer block w-full rounded-xl border border-slate-700/80 bg-slate-900/60 px-4 pt-6 pb-2 text-sm text-white placeholder-transparent transition-all focus:border-emerald-500 focus:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
-                  {errors["password"] ? (
-                    <p className="text-xs font-medium text-destructive">{errors["password"]}</p>
-                  ) : null}
+                  <label
+                    htmlFor="password"
+                    className="pointer-events-none absolute left-4 top-2 text-[11px] font-medium text-slate-400 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:text-slate-500 peer-focus:top-2 peer-focus:text-[11px] peer-focus:text-emerald-400"
+                  >
+                    {mode === "signup" ? "Create a secure password (8+ chars)" : "Enter your secret password"}
+                  </label>
                 </div>
-
-                <Button type="submit" className="w-full" disabled={busy}>
-                  {mode === "signup" ? "Create account" : "Sign in"}
-                </Button>
-              </form>
-
-              <div className="my-5 flex items-center gap-3">
-                <span className="h-px flex-1 bg-border" />
-                <span className="text-xs font-medium text-muted-foreground">or</span>
-                <span className="h-px flex-1 bg-border" />
+                {errors["password"] && (
+                  <p className="mt-1.5 text-xs font-medium text-rose-400">{errors["password"]}</p>
+                )}
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleGoogle}
+              {/* Action Button */}
+              <button
+                type="submit"
                 disabled={busy}
+                className="group relative mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 px-4 text-sm font-semibold text-white shadow-lg shadow-emerald-900/30 transition-all hover:from-emerald-500 hover:to-teal-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 active:scale-[0.99] disabled:opacity-60"
               >
-                <GoogleIcon />
-                Continue with Google
-              </Button>
-            </CardContent>
-          </Card>
+                {busy ? (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  <>
+                    <span>{mode === "signin" ? "Sign In" : "Create & Launch App"}</span>
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </>
+                )}
+              </button>
+            </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            <Link to="/" className="font-semibold text-primary hover:underline">
-              Back to homepage
+            <div className="my-6 flex items-center gap-3">
+              <span className="h-px flex-1 bg-slate-800" />
+              <span className="text-[11px] font-medium tracking-wider uppercase text-slate-500">Quick Access</span>
+              <span className="h-px flex-1 bg-slate-800" />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogle}
+              disabled={busy}
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-700/80 bg-slate-900/50 py-3 px-4 text-xs font-medium text-slate-200 transition hover:bg-slate-800/80 hover:border-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-700 disabled:opacity-60"
+            >
+              <GoogleIcon />
+              Continue with Google Account
+            </button>
+
+            {/* Bottom Account Switcher */}
+            <div className="mt-6 border-t border-slate-800/80 pt-4 text-center">
+              {mode === "signin" ? (
+                <p className="text-xs text-slate-400">
+                  Don't have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("signup");
+                      setErrors({});
+                    }}
+                    className="font-semibold text-emerald-400 hover:text-emerald-300 hover:underline ml-1"
+                  >
+                    Create account
+                  </button>
+                </p>
+              ) : (
+                <p className="text-xs text-slate-400">
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("signin");
+                      setErrors({});
+                    }}
+                    className="font-semibold text-emerald-400 hover:text-emerald-300 hover:underline ml-1"
+                  >
+                    Sign in
+                  </button>
+                </p>
+              )}
+            </div>
+          </div>
+
+          <p className="mt-6 text-center text-xs text-slate-400">
+            <Link to="/" className="font-medium text-emerald-400 hover:text-emerald-300 hover:underline">
+              &larr; Return to main website
             </Link>
           </p>
         </div>
@@ -227,7 +375,7 @@ function AuthPage() {
 
 function GoogleIcon() {
   return (
-    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden>
+    <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
       <path
         fill="#4285F4"
         d="M23.5 12.3c0-.9-.1-1.5-.2-2.2H12v4.2h6.6c-.1 1.1-.9 2.8-2.5 3.9l3.8 3c2.3-2.1 3.6-5.2 3.6-8.9z"

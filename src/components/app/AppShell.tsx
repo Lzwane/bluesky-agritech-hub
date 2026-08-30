@@ -1,214 +1,205 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { useState, useRef, useEffect } from "react";
 import {
+  LayoutDashboard,
+  ScanLine,
   BookOpen,
+  Store,
+  MessageSquare,
   Bot,
   LogOut,
-  Menu,
-  MessagesSquare,
-  ScanLine,
+  ChevronDown,
   Settings,
-  ShoppingBasket,
-  User as UserIcon,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
 
-import { Logo } from "@/components/Logo";
-import { LanguageSelect } from "@/components/app/LanguageSelect";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import logoImg from "@/assets/BlueSky_AgrITech_Logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useLanguage } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
 
-const NAV = [
-  { to: "/app", labelKey: "nav.diagnosis", icon: ScanLine },
-  { to: "/app/library", labelKey: "nav.library", icon: BookOpen },
-  { to: "/app/marketplace", labelKey: "nav.marketplace", icon: ShoppingBasket },
-  { to: "/app/forum", labelKey: "nav.forum", icon: MessagesSquare },
-  { to: "/app/advisor", labelKey: "nav.advisor", icon: Bot },
-] as const;
+const navItems = [
+  { label: "Dashboard", href: "/app", icon: LayoutDashboard, exact: true },
+  { label: "Diagnosis", href: "/app/diagnosis", icon: ScanLine },
+  { label: "Library", href: "/app/library", icon: BookOpen },
+  { label: "Marketplace", href: "/app/marketplace", icon: Store },
+  { label: "Forum", href: "/app/forum", icon: MessageSquare },
+  { label: "Advisor", href: "/app/advisor", icon: Bot },
+];
 
-export function useProfile() {
+export function AppShell() {
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const routerState = useRouterState();
+  const currentPath = routerState.location.pathname;
   const { user } = useAuth();
-  return useQuery({
-    queryKey: ["profile", user?.id],
-    enabled: Boolean(user?.id),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user!.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
-}
 
-export function AppShell({ children }: { children: ReactNode }) {
-  const { t } = useLanguage();
-  const { user } = useAuth();
-  const { data: profile } = useProfile();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const rawMeta = (user as any)?.user_metadata;
+  const displayName: string =
+    rawMeta?.display_name || user?.email?.split("@")[0] || "Farmer";
+  const email: string = user?.email || "grower@bluesky.co.za";
+  const initials: string = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
-  const displayName = profile?.display_name ?? user?.email?.split("@")[0] ?? "Farmer";
-  const initials = displayName.slice(0, 2).toUpperCase();
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  const isActive = (to: string) => (to === "/app" ? pathname === "/app" : pathname.startsWith(to));
-
-  async function handleSignOut() {
-    await queryClient.cancelQueries();
-    queryClient.clear();
+  const handleSignOut = async () => {
+    setProfileDropdownOpen(false);
     await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
-  }
+    window.location.href = "/auth";
+  };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-card/85 backdrop-blur">
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 lg:px-6">
-          <Logo to="/app" />
+    <div className="min-h-screen bg-[#0d1217] text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-black">
+      {/* Background Ambient Glow */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-64 bg-gradient-to-b from-emerald-600/10 via-cyan-600/5 to-transparent blur-3xl pointer-events-none -z-10" />
 
-          <div className="flex items-center gap-2">
-            <nav className="hidden items-center gap-1 lg:flex">
-              {NAV.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={cn(
-                    "flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold transition-colors",
-                    isActive(item.to)
-                      ? "bg-primary-soft text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  <item.icon className="h-4 w-4 shrink-0" aria-hidden />
-                  {t(item.labelKey)}
-                </Link>
-              ))}
-            </nav>
-
-            <div className="hidden md:block">
-              <LanguageSelect />
+      {/* Top Header */}
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#11161d]/90 border-b border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
+          
+          {/* Logo */}
+          <Link to="/app" className="flex items-center gap-3 group">
+            <div className="h-10 w-10 rounded-xl bg-slate-900 border border-slate-700/80 p-1 flex items-center justify-center group-hover:border-emerald-500/50 transition">
+              <img src={logoImg} alt="BlueSky AgriTech" className="h-full w-full object-contain" />
             </div>
+            <div>
+              <span className="font-bold text-base sm:text-lg text-white tracking-tight flex items-center gap-1">
+                BlueSky <span className="text-emerald-400">AgriTech</span>
+              </span>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Control Center</p>
+            </div>
+          </Link>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  aria-label="Account menu"
-                  className="hidden shrink-0 rounded-full ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:block"
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-1.5 bg-slate-900/70 p-1.5 rounded-2xl border border-slate-800/90 backdrop-blur-md">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.exact
+                ? currentPath === item.href
+                : currentPath.startsWith(item.href);
+
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                    isActive
+                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-950/50"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                  }`}
                 >
-                  <Avatar className="h-9 w-9 border border-border">
-                    <AvatarFallback className="bg-gradient-leaf text-xs font-bold text-primary-foreground">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="truncate">{displayName}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/app/settings">
-                    <UserIcon className="mr-2 h-4 w-4" aria-hidden />
-                    {t("nav.settings")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" aria-hidden />
-                  {t("app.signOut")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <Icon className="h-3.5 w-3.5" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
 
-            <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden" aria-label="Open menu">
-                  <Menu className="h-5 w-5" aria-hidden />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[86vw] max-w-sm">
-                <SheetHeader>
-                  <SheetTitle className="text-left">{displayName}</SheetTitle>
-                </SheetHeader>
-                <div className="space-y-5 px-4 pb-8">
-                  <div>
-                    <p className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                      {t("app.language")}
-                    </p>
-                    <LanguageSelect className="w-full" />
-                  </div>
+          {/* Top Right Profile Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => setProfileDropdownOpen((prev) => !prev)}
+              className="flex items-center gap-2.5 rounded-2xl border border-slate-700/80 bg-slate-900/80 hover:bg-slate-800/90 py-1.5 px-2.5 sm:px-3 text-left transition active:scale-[0.98]"
+              aria-expanded={profileDropdownOpen}
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-bold text-white shadow-sm">
+                {initials}
+              </div>
+              <div className="hidden sm:block text-left pr-1">
+                <p className="text-xs font-semibold text-white leading-tight truncate max-w-[120px]">
+                  {displayName}
+                </p>
+                <p className="text-[10px] text-emerald-400 font-medium leading-none mt-0.5">
+                  Verified Grower
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${
+                  profileDropdownOpen ? "rotate-180 text-emerald-400" : ""
+                }`}
+              />
+            </button>
 
-                  <nav className="grid gap-1">
-                    {[...NAV, { to: "/app/settings", labelKey: "nav.settings", icon: Settings }].map(
-                      (item) => (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          onClick={() => setDrawerOpen(false)}
-                          className={cn(
-                            "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold",
-                            isActive(item.to)
-                              ? "bg-primary-soft text-primary"
-                              : "text-foreground hover:bg-muted",
-                          )}
-                        >
-                          <item.icon className="h-4 w-4 shrink-0" aria-hidden />
-                          {t(item.labelKey)}
-                        </Link>
-                      ),
-                    )}
-                  </nav>
-
-                  <Button variant="outline" className="w-full" onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" aria-hidden />
-                    {t("app.signOut")}
-                  </Button>
+            {profileDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-700/70 bg-[#161d26] p-2 shadow-2xl backdrop-blur-xl z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="border-b border-slate-800/90 px-3 py-2.5">
+                  <p className="text-xs font-bold text-white truncate">{displayName}</p>
+                  <p className="text-[11px] text-slate-400 truncate mt-0.5">{email}</p>
                 </div>
-              </SheetContent>
-            </Sheet>
+
+                <div className="pt-1.5 space-y-1">
+                  <Link
+                    to="/app/settings"
+                    onClick={() => setProfileDropdownOpen(false)}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800/80 hover:text-emerald-400 transition"
+                  >
+                    <Settings className="h-4 w-4 text-slate-400" />
+                    <span>Account Settings</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 transition"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Leave & Log Out</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-28 lg:px-6 lg:pb-10">
-        {children}
+      {/* Main Page Area */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 pb-28 md:pb-8">
+        <Outlet />
       </main>
 
-      <nav
-        aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur lg:hidden"
-      >
-        <div className="mx-auto grid max-w-2xl grid-cols-5">
-          {NAV.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={cn(
-                "flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold transition-colors",
-                isActive(item.to) ? "text-primary" : "text-muted-foreground",
-              )}
-            >
-              <item.icon className="h-5 w-5" aria-hidden />
-              <span className="max-w-full truncate px-1">{t(item.labelKey)}</span>
-            </Link>
-          ))}
-        </div>
-      </nav>
+      {/* Mobile Floating Bottom Bar (Lifted for gesture home-bar safety) */}
+      <div className="md:hidden fixed bottom-5 inset-x-3 z-40">
+        <nav className="mx-auto max-w-md bg-[#161d26]/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl px-2 py-2 shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
+          <div className="grid grid-cols-6 gap-1 items-center">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.exact
+                ? currentPath === item.href
+                : currentPath.startsWith(item.href);
+
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition text-center ${
+                    isActive
+                      ? "text-emerald-400 font-bold bg-emerald-500/15"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <Icon className={`h-4 w-4 ${isActive ? "text-emerald-400" : "text-slate-400"}`} />
+                  <span className="text-[10px] mt-1 leading-none truncate max-w-[48px]">
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      </div>
     </div>
   );
 }
