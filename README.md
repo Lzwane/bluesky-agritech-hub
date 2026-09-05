@@ -91,24 +91,3 @@ Agricultural Marketplace: Product listings for verified seeds, fertilizers, and 
 AI Farm Advisor: Interactive chat assistant providing customized guidance on planting schedules, irrigation, and harvest timing.
 
 Ensure all UI components use accessible contrast ratios, smooth transitions, skeleton loaders for data fetching, and mobile-first responsive design.
-
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/5fbc0552-7715-45a9-8fa2-4a581b9bfbe8).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
