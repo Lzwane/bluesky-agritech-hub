@@ -63,7 +63,7 @@ export function AppShell() {
   return (
     <div className="min-h-screen bg-[#0d1217] text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-black">
       {/* Background Ambient Glow */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-64 bg-gradient-to-b from-emerald-600/10 via-cyan-600/5 to-transparent blur-3xl pointer-events-none -z-10" />
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-64 bg-linear-to-b from-emerald-600/10 via-cyan-600/5 to-transparent blur-3xl pointer-events-none -z-10" />
 
       {/* Top Header */}
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#11161d]/90 border-b border-slate-800/80">
@@ -96,7 +96,7 @@ export function AppShell() {
                   to={item.href}
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
                     isActive
-                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-950/50"
+                      ? "bg-linear-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-950/50"
                       : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
                   }`}
                 >
@@ -115,11 +115,11 @@ export function AppShell() {
               className="flex items-center gap-2.5 rounded-2xl border border-slate-700/80 bg-slate-900/80 hover:bg-slate-800/90 py-1.5 px-2.5 sm:px-3 text-left transition active:scale-[0.98]"
               aria-expanded={profileDropdownOpen}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-bold text-white shadow-sm">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-xs font-bold text-white shadow-sm">
                 {initials}
               </div>
               <div className="hidden sm:block text-left pr-1">
-                <p className="text-xs font-semibold text-white leading-tight truncate max-w-[120px]">
+                <p className="text-xs font-semibold text-white leading-tight truncate max-w-30">
                   {displayName}
                 </p>
                 <p className="text-[10px] text-emerald-400 font-medium leading-none mt-0.5">
@@ -191,7 +191,7 @@ export function AppShell() {
                   }`}
                 >
                   <Icon className={`h-4 w-4 ${isActive ? "text-emerald-400" : "text-slate-400"}`} />
-                  <span className="text-[10px] mt-1 leading-none truncate max-w-[48px]">
+                  <span className="text-[10px] mt-1 leading-none truncate max-w-12">
                     {item.label}
                   </span>
                 </Link>

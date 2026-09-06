@@ -40,7 +40,7 @@ function DashboardHome() {
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
               to="/app/diagnosis"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-950 hover:from-emerald-500 hover:to-teal-500 transition active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-950 hover:from-emerald-500 hover:to-teal-500 transition active:scale-95"
             >
               <ScanLine className="h-4 w-4" /> Run Quick Diagnosis
             </Link>
